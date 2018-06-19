@@ -1,0 +1,63 @@
+buildscript {
+    ext {
+        autoValueVersion = '1.2'
+        beamVersion = '2.4.0'
+        guavaVersion = '23.6.1-jre'
+        jodaTimeVersion = '2.10'
+        slf4jVersion = '1.7.25'
+
+        hamcrestVersion = '1.3'
+        junitVersion = '4.12'
+    }
+
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+plugins {
+    id 'java'
+    id 'net.ltgt.apt-idea' version '0.16'
+}
+
+group 'io.suryawirawan.henry.beam.redis'
+version '0.1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+idea {
+    project {
+        // experimental: whether annotation processing will be configured in the IDE; only actually used with the 'idea' task.
+        configureAnnotationProcessing = true
+    }
+    module {
+        apt {
+            // whether generated sources dirs are added as generated sources root
+            addGeneratedSourcesDirs = true
+            // whether the annotationProcessor/apt and testAnnotationProcessor/testApt dependencies are added as module dependencies
+            addAptDependencies = true
+        }
+    }
+}
+
+dependencies {
+    compile "org.apache.beam:beam-sdks-java-core:$beamVersion"
+    compile "org.apache.beam:beam-sdks-java-io-redis:$beamVersion"
+    runtime "org.apache.beam:beam-runners-direct-java:$beamVersion"
+
+    compile "com.google.auto.value:auto-value:$autoValueVersion"
+
+    compile "com.google.guava:guava:$guavaVersion"
+    compile "joda-time:joda-time:$jodaTimeVersion"
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    compile "org.slf4j:slf4j-jdk14:$slf4jVersion"
+
+    testCompile "junit:junit:$junitVersion"
+    testCompile "org.hamcrest:hamcrest-core:$hamcrestVersion"
+    testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+}
