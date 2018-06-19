@@ -56,7 +56,21 @@ public class CustomRedisIO {
       APPEND,
 
       /** Use SET command. If key already holds a value, it is overwritten. */
-      SET
+      SET,
+
+      /**
+       * Use LPUSH command. Insert value at the head of the list stored at key. If key does not
+       * exist, it is created as empty list before performing the push operations. When key holds a
+       * value that is not a list, an error is returned.
+       */
+      LPUSH,
+
+      /**
+       * Use RPUSH command. Insert value at the tail of the list stored at key. If key does not
+       * exist, it is created as empty list before performing the push operations. When key holds a
+       * value that is not a list, an error is returned.
+       */
+      RPUSH
     }
 
     @Nullable
@@ -172,17 +186,41 @@ public class CustomRedisIO {
       }
 
       private void writeRecord(KV<String, String> record) {
-        if (Method.APPEND == spec.method()) {
-          pipeline.append(record.getKey(), record.getValue());
+        Method method = spec.method();
+        Long expireTime = spec.expireTime();
 
-        } else if (Method.SET == spec.method()) {
-          Long expireTime = spec.expireTime();
+        if (Method.APPEND == method) {
+          writeUsingAppendCommand(record);
+        } else if (Method.SET == method) {
+          writeUsingSetCommand(record, expireTime);
+        } else if (Method.LPUSH == method || Method.RPUSH == method) {
+          writeUsingListCommand(record, method, expireTime);
+        }
+      }
 
-          if (expireTime != null) {
-            pipeline.psetex(record.getKey(), expireTime, record.getValue());
-          } else {
-            pipeline.set(record.getKey(), record.getValue());
-          }
+      private void writeUsingAppendCommand(KV<String, String> record) {
+        pipeline.append(record.getKey(), record.getValue());
+      }
+
+      private void writeUsingSetCommand(KV<String, String> record, Long expireTime) {
+        if (expireTime != null) {
+          pipeline.psetex(record.getKey(), expireTime, record.getValue());
+        } else {
+          pipeline.set(record.getKey(), record.getValue());
+        }
+      }
+
+      private void writeUsingListCommand(
+          KV<String, String> record, Method method, Long expireTime) {
+
+        if (Method.LPUSH == method) {
+          pipeline.lpush(record.getKey(), record.getValue());
+        } else if (Method.RPUSH == method) {
+          pipeline.rpush(record.getKey(), record.getValue());
+        }
+
+        if (expireTime != null) {
+          pipeline.pexpire(record.getKey(), expireTime);
         }
       }
 
